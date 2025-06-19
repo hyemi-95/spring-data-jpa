@@ -25,10 +25,11 @@ class MemberRepositoryTest {
         // given
         Member member = new Member("MemberA");
         Member savedMember = memberRepository.save(member);
-        Optional<Member> findById = memberRepository.findById(savedMember.getId());
+//        Optional<Member> findById = memberRepository.findById(savedMember.getId());
+        Member findById = memberRepository.findById(savedMember.getId()).get();
         // when
-        assertThat(findById.get().getId()).isEqualTo(member.getId());
-        assertThat(findById.get().getUsername()).isEqualTo(member.getUsername());
+        assertThat(findById.getId()).isEqualTo(member.getId());
+        assertThat(findById.getUsername()).isEqualTo(member.getUsername());
         assertThat(findById).isEqualTo(member);//JPA 엔티티 동일성 보장
     }
 

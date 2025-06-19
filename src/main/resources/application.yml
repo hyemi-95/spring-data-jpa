@@ -6,12 +6,15 @@ spring:
     driver-class-name: org.h2.Driver
 
   jpa:
+    #    open-in-view: false # false로 한다면 모든 지연로딩을 트랜잭션안에서 초기화 하거나 패치조인 해야함
     hibernate:
       ddl-auto: create
     properties:
       hibernate:
-        # show_sql: true
         format_sql: true
+#        default_batch_fetch_size: 100
+        #지연 로딩 성능 최적화를 위해 `hibernate.default_batch_fetch_size` , `@BatchSize` 를 적용
+        #이 옵션을 사용하면 컬렉션이나, 프록시 객체를 한꺼번에 설정한 size 만큼 IN 쿼리로 조회한다.
 
   h2:
     console:
@@ -20,5 +23,15 @@ spring:
 
 logging:
   level:
-    org.hibernate.SQL: debug
-    # org.hibernate.type: trace
+    #    org.hibernate.SQL: debug
+    #    org.hibernate.orm.jdbc.bind: trace
+    p6spy: debug
+
+decorator:
+  datasource:
+    p6spy:
+      enable-logging: true
+      multiline: true
+      logging: slf4j
+      #      log-format: '%(sqlSingleLine)'
+      format-sql: true
