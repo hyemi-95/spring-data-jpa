@@ -7,7 +7,7 @@ import org.springframework.stereotype.Controller;
 @Entity
 @Getter  @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@ToString(of={"id","username","age"})
+@ToString(of={"id","username","age"}) // 연관관계가 있을 시, 무한루프 방지를 위해 지정해서 toString지정
 public class Member {
 
     @Id @GeneratedValue
