@@ -12,7 +12,7 @@ import org.springframework.stereotype.Controller;
 //        name="Member.findByUsername",
 //        query="select m from Member m where m.username = :username") //실무에서 거의 안씀
 //@NamedEntityGraph(name="Member.all", attributeNodes = @NamedAttributeNode("team"))
-public class Member {
+public class Member extends BaseEntity{
 
     @Id @GeneratedValue
     @Column(name="member_id")

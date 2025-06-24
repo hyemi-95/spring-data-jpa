@@ -292,4 +292,29 @@ class MemberRepositoryTest {
         List<Member> check = memberRepository.findByUsername("user999", Pageable.unpaged()).getContent();
         assertThat(check.size()).isEqualTo(0); // username이 바뀌지 않았기 때문에 0명
     }
+    
+    @Test
+    public void callCustom(){
+        memberRepository.findMemberCustom();
+    }
+
+    @Test
+    public void jpaEventBaseEntity() throws Exception {
+        //given
+        Member member = new Member("member1");
+        memberRepository.save(member); //@PrePersist
+        Thread.sleep(100);
+        member.setUsername("member2");
+        em.flush(); //@PreUpdate
+        em.clear();
+        //when
+        Member findMember = memberRepository.findById(member.getId()).get();
+        //then
+        System.out.println("findMember.createdDate = " + findMember.getCreatedDate());
+//        System.out.println("findMember.updatedDate = " + findMember.getUpdatedDate()); -> 순수자바버전일때
+        System.out.println("findMember.updatedDate = " + findMember.getLastModifiedDate());
+        System.out.println("findMember.createBy = " + findMember.getCreatedBy());
+        System.out.println("findMember.modifyBy = " + findMember.getLastModifiedBy());
+
+    }
 }
