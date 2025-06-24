@@ -1,12 +1,11 @@
 package study.data_jpa.repository;
 
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.QueryHint;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
-import org.springframework.data.jpa.repository.EntityGraph;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import study.data_jpa.dto.MemberDto;
 import study.data_jpa.entity.Member;
@@ -87,4 +86,17 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     List<Member> findEntityGraphByUsername(String username);
 
     //EntityGraph end
+
+    //jpa 힌트
+    @QueryHints(value = @QueryHint(name = "org.hibernate.readOnly", value = "true")) //조회 성능이 향상되긴 하나 엄처나지 않기때문에 성능 테스트 후 필요 시 사용하는걸로
+    Member findReadOnlyByUsername(String username);
+
+    @QueryHints(value = {@QueryHint(name = "org.hibernate.readOnly", value = "true")}, forCounting = true)
+    Page<Member> findByUsername(String name, Pageable pageable);
+
+
+    //Lock
+//    @Lock(LockModeType.PESSIMISTIC_WRITE) //	동시에 수정할 수 있는 위험이 있는 민감한 데이터 처리 시
+//    List<Member> findByUsername(String name);
+
 }

@@ -5,10 +5,7 @@ import org.assertj.core.api.ObjectAssert;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Slice;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 import study.data_jpa.dto.MemberDto;
@@ -250,5 +247,49 @@ class MemberRepositoryTest {
         for (Member member : members) {
             member.getTeam().getName();
         }
+    }
+
+    @Test
+    public void queryHint() throws Exception {
+        //given
+        memberRepository.save(new Member("member1", 10));
+        em.flush();
+        em.clear();
+        //when
+        Member member = memberRepository.findReadOnlyByUsername("member1");
+        member.setUsername("member2");
+        em.flush(); //Update Query 실행X
+    }
+
+    @Test
+    void queryHint_readOnly_paging() {
+        // given
+        memberRepository.save(new Member("user1", 10));
+        memberRepository.save(new Member("user1", 20));
+        memberRepository.save(new Member("user1", 30));
+
+        em.flush();
+        em.clear();
+
+        // when
+        Pageable pageable = PageRequest.of(0, 2, Sort.by("age").descending());
+        Page<Member> page = memberRepository.findByUsername("user1", pageable);
+
+        // then
+        List<Member> content = page.getContent();
+        assertThat(page.getTotalElements()).isEqualTo(3);
+        assertThat(content.size()).isEqualTo(2);
+        assertThat(content.get(0).getAge()).isEqualTo(30);
+        assertThat(content.get(1).getAge()).isEqualTo(20);
+
+        // 읽기 전용 상태에서는 변경 감지 (dirty checking)이 되지 않음
+        Member readOnlyMember = content.get(0);
+        readOnlyMember.setUsername("user999");
+
+        em.flush(); // flush 되더라도 변경이 DB에 반영되지 않음 (readOnly니까)
+
+        // 확인용 출력
+        List<Member> check = memberRepository.findByUsername("user999", Pageable.unpaged()).getContent();
+        assertThat(check.size()).isEqualTo(0); // username이 바뀌지 않았기 때문에 0명
     }
 }
