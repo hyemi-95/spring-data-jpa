@@ -1,6 +1,11 @@
 package study.data_jpa.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import study.data_jpa.dto.MemberDto;
@@ -43,9 +48,43 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     @Query("select m from Member m where m.username in :names")
     List<Member> findByNames(@Param("names") Collection<String> names);
 
-    //반환타입
+    //반환타입 start
     List<Member> findListByUsername(String username);//컬렉션
     Member findMemberByUsername(String username);//단건
     Optional<Member> findOpionalByUsername(String username);//단건 옵셔널
+    //반환타입 end
 
+    //페이징 및 정렬
+    @Query(value = "select m from Member m left join m.team t",
+            countQuery = "select count(m.username) from Member m")//count 쿼리를 분리할 수 있음(복잡한 sql에서 사용)
+    Page<Member> findByAge(int name, Pageable pageable); //totalCount쿼리까지 함께해줌
+//    Slice<Member> findByAge(int name, Pageable pageable); //totalCount쿼리는 없음
+//    List<Member> findByAge(int name, Pageable pageable); //List만 불러와짐
+
+    //벌크성 수정
+    @Modifying (clearAutomatically = true)// executeUpdate를 시켜줌 / 쿼리 실행 후 영속성 컨텍스트를 자동으로 초기화해서 동기화 문제 방지를 위함
+    @Query("update Member m set m.age = m.age + 1 where m.age >= :age")
+    int bulkAgePlus(@Param("age") int age);
+
+    @Query("select m from Member m left join fetch m.team")
+    List<Member> findMemberFetchJoin();
+
+    //EntityGraph 패치조인 없이 한번에 가지고 오는 방법
+    //사실상 페치 조인(FETCH JOIN)의 간편 버전
+    //LEFT OUTER JOIN 사용
+    @Override
+    @EntityGraph(attributePaths = {"team"})
+    List<Member> findAll();
+
+    //JPQL + 엔티티 그래프
+    @EntityGraph(attributePaths = {"team"})
+    @Query("select m from Member m")
+    List<Member> findMemberEntityGraph();
+
+    //메서드 이름으로 쿼리에서 특히 편리하다.
+    @EntityGraph(attributePaths = {"team"})
+//    @EntityGraph("Member.all") //-> 엔티티에 NamedEntityGraph를 적용했을 때
+    List<Member> findEntityGraphByUsername(String username);
+
+    //EntityGraph end
 }

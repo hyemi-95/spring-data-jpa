@@ -1,9 +1,14 @@
 package study.data_jpa.repository;
 
+import jakarta.persistence.EntityManager;
 import org.assertj.core.api.ObjectAssert;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 import study.data_jpa.dto.MemberDto;
@@ -25,6 +30,8 @@ class MemberRepositoryTest {
 
     @Autowired MemberRepository memberRepository; //JPA리포지토리 인터페이스
     @Autowired TeamRepository teamRepository;
+
+    @Autowired EntityManager em;
 
     @Test
     public void testMember() {
@@ -168,5 +175,80 @@ class MemberRepositoryTest {
         System.out.println("aaa1 ="+aaa1);
         System.out.println("aaa2 ="+aaa2);
 
+    }
+
+    @Test
+    public void paging() throws Exception {
+        //given
+        memberRepository.save(new Member("member1", 10));
+        memberRepository.save(new Member("member2", 10));
+        memberRepository.save(new Member("member3", 10));
+        memberRepository.save(new Member("member4", 10));
+        memberRepository.save(new Member("member5", 10));
+
+        int age=10;
+        PageRequest pageRequest = PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "username"));
+
+        //when
+        Page<Member> page = memberRepository.findByAge(age, pageRequest);
+//        Slice<Member> page = memberRepository.findByAge(age, pageRequest);//내가 요청한 페이지사이즈보다 하나 더 가져옴 3개 요청 -> 4개로 요청함
+//        List<Member> list = memberRepository.findByAge(age, pageRequest);
+
+        //dto변환 -> API에서 반환할때는 꼭 DTO로 변환해서 반환하자
+        Page<MemberDto> map = page.map(m -> new MemberDto(m.getId(), m.getUsername(),null));
+
+        //then
+        //List타입은 아래 모두 주석
+
+        List<Member> content = page.getContent();
+//
+        assertThat(content.size()).isEqualTo(3);
+        assertThat(page.getTotalElements()).isEqualTo(5);//Slice에는 없음
+        assertThat(page.getNumber()).isEqualTo(0);
+        assertThat(page.getTotalPages()).isEqualTo(2);//Slice에는 없음
+        assertThat(page.isFirst()).isTrue();
+        assertThat(page.hasNext()).isTrue();
+    }
+
+    @Test
+    public void bulkUpdate() throws Exception {
+        //given
+        memberRepository.save(new Member("member1", 10));
+        memberRepository.save(new Member("member2", 19));
+        memberRepository.save(new Member("member3", 20));
+        memberRepository.save(new Member("member4", 21));
+        memberRepository.save(new Member("member5", 40));
+        //when
+        int resultCount = memberRepository.bulkAgePlus(20);
+
+        //영속성 확인
+        List<Member> result = memberRepository.findListByUsername("member5");
+        Member member5 = result.get(0);
+        System.out.println("member5 = " + member5);
+        
+        //then
+        assertThat(resultCount).isEqualTo(3);
+    }
+
+    @Test
+    public void findMemberLazy() throws Exception {
+        //given
+        //member1 -> teamA
+        //member2 -> teamB
+        Team teamA = new Team("teamA");
+        Team teamB = new Team("teamB");
+        teamRepository.save(teamA);
+        teamRepository.save(teamB);
+        memberRepository.save(new Member("member1", 10, teamA));
+        memberRepository.save(new Member("member2", 20, teamB));
+        em.flush();
+        em.clear();
+        //when
+        List<Member> members = memberRepository.findAll();
+//        List<Member> members = memberRepository.findMemberFetchJoin();
+        //then
+        for (Member member : members) {
+            member.getTeam().getName();
+        }
     }
 }

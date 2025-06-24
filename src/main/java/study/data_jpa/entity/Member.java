@@ -8,9 +8,10 @@ import org.springframework.stereotype.Controller;
 @Getter  @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @ToString(of={"id","username","age"}) // 연관관계가 있을 시, 무한루프 방지를 위해 지정해서 toString지정
-@NamedQuery(
-        name="Member.findByUsername",
-        query="select m from Member m where m.username = :username") //실무에서 거의 안씀
+//@NamedQuery(
+//        name="Member.findByUsername",
+//        query="select m from Member m where m.username = :username") //실무에서 거의 안씀
+//@NamedEntityGraph(name="Member.all", attributeNodes = @NamedAttributeNode("team"))
 public class Member {
 
     @Id @GeneratedValue
